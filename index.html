@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Світ Власних Міні-Ігор</title>
+    
+    <!-- Підключення Tailwind CSS для стилізації -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Підключення шрифтів Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Загальні стилі та ігровий шрифт */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        .font-game {
+            font-family: 'Press Start 2P', cursive;
+        }
+        /* Стилізація скролбару */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #2d3748; }
+        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+        /* Контейнер для ігрового поля */
+        #game-display-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3; /* Співвідношення сторін для ігор */
+            background-color: #000;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        
+        /* Стилі для всіх ігрових контейнерів */
+        .game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Стилі для ігрових полотен (canvas) */
+        .game-canvas {
+            background-color: #111827; /* Темно-сірий фон */
+            border-radius: 0.5rem;
+            width: 95%;
+            height: auto;
+        }
+        
+        #snake-canvas, #tic-tac-toe-board, #minesweeper-board { aspect-ratio: 1 / 1; }
+        #pong-canvas, #arkanoid-canvas, #space-invaders-canvas, #asteroids-canvas, #flappy-bird-canvas { aspect-ratio: 4 / 3; }
+
+        /* Стилі для гри "Хрестики-нулики" */
+        #tic-tac-toe-board { display: grid; grid-template-columns: repeat(3, 1fr); width: 80%; max-width: 400px; gap: 10px; }
+        .tic-tac-toe-cell { background-color: #4a5568; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; color: #e2e8f0; font-family: 'Press Start 2P', cursive; }
+        .tic-tac-toe-cell:hover { background-color: #718096; }
+        .tic-tac-toe-cell.x { color: #68d391; }
+        .tic-tac-toe-cell.o { color: #f6ad55; }
+        .tic-tac-toe-cell.win { background-color: #f6e05e; }
+
+        /* Стилі для гри "Сапер" */
+        #minesweeper-board { display: grid; width: 95%; max-width: 500px; background-color: #4a5568; padding: 5px; gap: 2px; }
+        .minesweeper-cell { background-color: #2d3748; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; user-select: none; font-family: 'Press Start 2P'; font-size: 1rem; }
+        .minesweeper-cell.revealed { background-color: #718096; }
+        .minesweeper-cell.flagged::after { content: '🚩'; }
+        .minesweeper-cell.mine::after { content: '💣'; }
+        .color-1 { color: #529dff; }
+        .color-2 { color: #56f000; }
+        .color-3 { color: #ff4545; }
+        .color-4 { color: #c352ff; }
+        .color-5 { color: #ff9145; }
+        .color-6 { color: #00e7e7; }
+        .color-7 { color: #e7e700; }
+        .color-8 { color: #ffffff; }
+        
+        /* Стилі для перемикача мов */
+        #language-switcher {
+            position: fixed;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: rgba(45, 55, 72, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        .lang-btn {
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            transition: border-color 0.3s;
+            overflow: hidden;
+        }
+        .lang-btn:hover, .lang-btn.active {
+            border-color: #f6e05e;
+        }
+        .lang-btn svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-900 text-white p-4 md:p-8">
+    
+    <!-- Перемикач мов -->
+    <div id="language-switcher">
+        <button class="lang-btn" data-lang="uk">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g fill-rule="evenodd" stroke-width="1pt"><path fill="#ffd500" d="M0 0h512v512H0z"/><path fill="#005bbb" d="M0 0h512v256H0z"/></g></svg>
+        </button>
+        <button class="lang-btn" data-lang="en">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#012169" d="M0 0h512v512H0z"/><path fill="#FFF" d="m512 512 -171-128-170 128h341zM0 0l171 128L341 0H0zm171 128L0 256V128h171zm170 0L512 0v128H341zM0 384l171-128H0v128zm341 0 171 128V384H341z"/><path fill="#C8102E" d="m183 206 159-120v-1L183 0v206zM329 306 171 426v1l158-121zM0 194v24l159 119L0 313v-24L118 256zM512 194v24L353 337l159-124v-24L394 256z"/><path fill="#FFF" d="M512 0v4L369 128h25L512 4zM0 512v-4l143-124h-25L0 508z"/><path fill="#C8102E" d="M512 256h-53l-65-49-1-1 66-49h53v99zM0 256h53l65-49 1-1-66-49H0v99zM256 0v53l49 65 1 1 49-66V0h-99zm0 512v-53l49-65 1-1 49 66v53h-99z"/></svg>
+        </button>
+        <button class="lang-btn" data-lang="ru">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g fill-rule="evenodd" stroke-width="1pt"><path fill="#fff" d="M0 0h512v512H0z"/><path fill="#0039a6" d="M0 170.667h512V512H0z"/><path fill="#d52b1e" d="M0 341.333h512V512H0z"/></g></svg>
+        </button>
+    </div>
+
+    <div class="container mx-auto max-w-7xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="font-game text-3xl md:text-5xl text-yellow-400 drop-shadow-lg" data-lang-key="main_title">Моя Ігрова Аркада</h1>
+            <p class="text-gray-400 mt-2" data-lang-key="subtitle">Власноруч створені ігри. Насолоджуйтесь!</p>
+        </header>
+
+        <main class="mb-8 bg-black rounded-xl shadow-2xl border-4 border-purple-500">
+            <div id="game-display-container">
+                <!-- Початковий екран -->
+                <div id="welcome-screen" class="game-container">
+                    <h2 class="font-game text-2xl md:text-4xl text-center text-purple-400" data-lang-key="welcome_title">Вітаємо!</h2>
+                    <p class="mt-4 text-lg text-center text-gray-300" data-lang-key="welcome_text">Оберіть гру з меню нижче.</p>
+                </div>
+                
+                <!-- Контейнери для ігор -->
+                <div id="snake-game" class="game-container hidden"><div class="font-game text-xl mb-2"><span data-lang-key="score">РАХУНОК</span>: <span id="snake-score">0</span></div><canvas id="snake-canvas" class="game-canvas"></canvas><div id="snake-game-over" class="hidden absolute text-center bg-black bg-opacity-75 p-8 rounded-lg"><h3 class="font-game text-3xl text-red-500" data-lang-key="game_over">Гру Закінчено</h3><p class="mt-4" data-lang-key="restart_enter">Натисніть 'Enter', щоб почати знову</p></div></div>
+                <div id="tic-tac-toe-game" class="game-container hidden"><h3 id="tic-tac-toe-status" class="font-game text-xl mb-4">Хід гравця X</h3><div id="tic-tac-toe-board"></div><button id="tic-tac-toe-restart" class="hidden mt-4 font-game bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" data-lang-key="play_again">Грати знову</button></div>
+                <div id="pong-game" class="game-container hidden"><div class="font-game text-xl mb-2 flex justify-around w-full max-w-md"><span><span data-lang-key="player">Гравець</span>: <span id="pong-player-score">0</span></span><span><span data-lang-key="computer">Комп'ютер</span>: <span id="pong-computer-score">0</span></span></div><canvas id="pong-canvas" class="game-canvas"></canvas><div id="pong-game-over" class="hidden absolute text-center bg-black bg-opacity-75 p-8 rounded-lg"><h3 id="pong-winner" class="font-game text-3xl text-yellow-400"></h3><p class="mt-4" data-lang-key="restart_click">Клікніть, щоб грати знову</p></div></div>
+                <div id="arkanoid-game" class="game-container hidden"><div class="font-game text-xl mb-2 flex justify-around w-full max-w-md"><span><span data-lang-key="score">РАХУНОК</span>: <span id="arkanoid-score">0</span></span><span><span data-lang-key="lives">ЖИТТЯ</span>: <span id="arkanoid-lives">0</span></span></div><canvas id="arkanoid-canvas" class="game-canvas"></canvas><div id="arkanoid-message" class="hidden absolute text-center bg-black bg-opacity-75 p-8 rounded-lg"><h3 id="arkanoid-message-text" class="font-game text-3xl"></h3><p class="mt-4" data-lang-key="start_click">Клікніть, щоб почати</p></div></div>
+                <div id="space-invaders-game" class="game-container hidden"><div class="font-game text-xl mb-2 flex justify-around w-full max-w-md"><span><span data-lang-key="score">РАХУНОК</span>: <span id="invaders-score">0</span></span><span><span data-lang-key="lives">ЖИТТЯ</span>: <span id="invaders-lives">0</span></span></div><canvas id="space-invaders-canvas" class="game-canvas"></canvas><div id="invaders-message" class="hidden absolute text-center bg-black bg-opacity-75 p-8 rounded-lg"><h3 id="invaders-message-text" class="font-game text-3xl"></h3><p class="mt-4" data-lang-key="start_enter">Натисніть 'Enter' для старту</p></div></div>
+                <div id="asteroids-game" class="game-container hidden"><div class="font-game text-xl mb-2 flex justify-around w-full max-w-md"><span><span data-lang-key="score">РАХУНОК</span>: <span id="asteroids-score">0</span></span><span><span data-lang-key="lives">ЖИТТЯ</span>: <span id="asteroids-lives">0</span></span></div><canvas id="asteroids-canvas" class="game-canvas"></canvas><div id="asteroids-message" class="hidden absolute text-center bg-black bg-opacity-75 p-8 rounded-lg"><h3 id="asteroids-message-text" class="font-game text-3xl"></h3><p class="mt-4" data-lang-key="start_enter">Натисніть 'Enter' для старту</p></div></div>
+                <div id="flappy-bird-game" class="game-container hidden"><div class="font-game text-xl absolute top-5"><span data-lang-key="score">РАХУНОК</span>: <span id="flappy-score">0</span></div><canvas id="flappy-bird-canvas" class="game-canvas"></canvas><div id="flappy-message" class="hidden absolute text-center bg-black bg-opacity-75 p-8 rounded-lg"><h3 class="font-game text-3xl text-red-500" data-lang-key="game_over">Гру Закінчено</h3><p class="mt-4" data-lang-key="restart_click">Клікніть, щоб почати знову</p></div></div>
+                <div id="minesweeper-game" class="game-container hidden"><div class="font-game text-xl mb-2"><span data-lang-key="mines">МІНИ</span>: <span id="minesweeper-mines-left">0</span></div><div id="minesweeper-board"></div><div id="minesweeper-message" class="hidden absolute text-center bg-black bg-opacity-75 p-8 rounded-lg"><h3 id="minesweeper-message-text" class="font-game text-3xl"></h3><p class="mt-4" data-lang-key="restart_click_field">Клікніть на поле, щоб почати знову</p></div></div>
+                <div id="mario-game" class="game-container hidden">
+                    <iframe id="mario-iframe" class="w-full h-full border-0" src=""></iframe>
+                </div>
+            </div>
+        </main>
+
+        <section>
+            <h3 class="font-game text-2xl text-center mb-6 text-green-400" data-lang-key="game_choice">Вибір гри</h3>
+            <div id="button-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <!-- Кнопки будуть додані тут -->
+            </div>
+        </section>
+        
+        <footer class="text-center mt-12 text-gray-500 text-sm">
+            <p data-lang-key="created_by">Створено за допомогою Gemini</p>
+        </footer>
+    </div>
+
+    <script>
+    // =================================================================
+    // ЛОГІКА ПЕРЕКЛАДУ
+    // =================================================================
+    const translations = {
+        main_title: { uk: 'Моя Ігрова Аркада', en: 'My Game Arcade', ru: 'Моя Игровая Аркада' },
+        subtitle: { uk: 'Власноруч створені ігри. Насолоджуйтесь!', en: 'Handmade games. Enjoy!', ru: 'Собственноручно созданные игры. Наслаждайтесь!' },
+        welcome_title: { uk: 'Вітаємо!', en: 'Welcome!', ru: 'Добро пожаловать!' },
+        welcome_text: { uk: 'Оберіть гру з меню нижче.', en: 'Choose a game from the menu below.', ru: 'Выберите игру из меню ниже.' },
+        game_choice: { uk: 'Вибір гри', en: 'Game Selection', ru: 'Выбор игры' },
+        created_by: { uk: 'Створено за допомогою Gemini', en: 'Created with Gemini', ru: 'Создано с помощью Gemini' },
+        score: { uk: 'РАХУНОК', en: 'SCORE', ru: 'СЧЕТ' },
+        lives: { uk: 'ЖИТТЯ', en: 'LIVES', ru: 'ЖИЗНИ' },
+        mines: { uk: 'МІНИ', en: 'MINES', ru: 'МИНЫ' },
+        player: { uk: 'Гравець', en: 'Player', ru: 'Игрок' },
+        computer: { uk: 'Комп\'ютер', en: 'Computer', ru: 'Компьютер' },
+        game_over: { uk: 'Гру Закінчено', en: 'Game Over', ru: 'Игра Окончена' },
+        win: { uk: 'Перемога!', en: 'You Win!', ru: 'Победа!' },
+        lose: { uk: 'Ви програли!', en: 'You Lose!', ru: 'Вы проиграли!' },
+        draw: { uk: 'Нічия!', en: 'Draw!', ru: 'Ничья!' },
+        restart_enter: { uk: 'Натисніть \'Enter\', щоб почати знову', en: 'Press \'Enter\' to restart', ru: 'Нажмите \'Enter\', чтобы начать снова' },
+        restart_click: { uk: 'Клікніть, щоб грати знову', en: 'Click to play again', ru: 'Кликните, чтобы играть снова' },
+        restart_click_field: { uk: 'Клікніть на поле, щоб почати знову', en: 'Click the field to play again', ru: 'Кликните на поле, чтобы начать снова' },
+        start_click: { uk: 'Клікніть, щоб почати', en: 'Click to start', ru: 'Кликните, чтобы начать' },
+        start_enter: { uk: 'Натисніть \'Enter\' для старту', en: 'Press \'Enter\' to start', ru: 'Нажмите \'Enter\' для старта' },
+        play_again: { uk: 'Грати знову', en: 'Play Again', ru: 'Играть снова' },
+        ttt_turn: { uk: 'Хід гравця {player}', en: 'Player {player}\'s turn', ru: 'Ход игрока {player}' },
+        ttt_win: { uk: 'Гравець {player} переміг!', en: 'Player {player} wins!', ru: 'Игрок {player} победил!' },
+        pong_win_player: { uk: 'Гравець Переміг!', en: 'Player Wins!', ru: 'Игрок Победил!' },
+        pong_win_cpu: { uk: 'Комп\'ютер Переміг!', en: 'Computer Wins!', ru: 'Компьютер Победил!' },
+        game_snake: { uk: 'Змійка', en: 'Snake', ru: 'Змейка' },
+        game_ttt: { uk: 'Хрестики-нулики', en: 'Tic-Tac-Toe', ru: 'Крестики-нолики' },
+        game_pong: { uk: 'Понг', en: 'Pong', ru: 'Понг' },
+        game_arkanoid: { uk: 'Арканоїд', en: 'Arkanoid', ru: 'Арканоид' },
+        game_invaders: { uk: 'Космо-Загарбники', en: 'Space Invaders', ru: 'Космо-Захватчики' },
+        game_asteroids: { uk: 'Астероїди', en: 'Asteroids', ru: 'Астероиды' },
+        game_flappy: { uk: 'Пташка-Летун', en: 'Flappy Bird', ru: 'Летящая Птичка' },
+        game_minesweeper: { uk: 'Сапер', en: 'Minesweeper', ru: 'Сапер' },
+        game_mario: { uk: 'Супер Маріо', en: 'Super Mario', ru: 'Супер Марио' },
+    };
+    let currentLanguage = 'uk';
+
+    function setLanguage(lang) {
+        currentLanguage = lang;
+        document.documentElement.lang = lang;
+        
+        document.querySelectorAll('[data-lang-key]').forEach(el => {
+            const key = el.dataset.langKey;
+            if (translations[key] && translations[key][lang]) {
+                el.textContent = translations[key][lang];
+            }
+        });
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setLanguage(btn.dataset.lang);
+        });
+    });
+
+    // =================================================================
+    // ОСНОВНА ЛОГІКА САЙТУ
+    // =================================================================
+    const games = [
+        { name: 'Змійка', id: 'snake-game', type: 'native', langKey: 'game_snake' },
+        { name: 'Хрестики-нулики', id: 'tic-tac-toe-game', type: 'native', langKey: 'game_ttt' },
+        { name: 'Понг', id: 'pong-game', type: 'native', langKey: 'game_pong' },
+        { name: 'Арканоїд', id: 'arkanoid-game', type: 'native', langKey: 'game_arkanoid' },
+        { name: 'Космо-Загарбники', id: 'space-invaders-game', type: 'native', langKey: 'game_invaders' },
+        { name: 'Астероїди', id: 'asteroids-game', type: 'native', langKey: 'game_asteroids' },
+        { name: 'Пташка-Летун', id: 'flappy-bird-game', type: 'native', langKey: 'game_flappy' },
+        { name: 'Сапер', id: 'minesweeper-game', type: 'native', langKey: 'game_minesweeper' },
+        { name: 'Супер Маріо', id: 'mario-game', type: 'iframe', src: 'https://jcw87.github.io/c2-smb1/', langKey: 'game_mario' }
+    ];
+
+    const buttonGrid = document.getElementById('button-grid');
+    const gameContainers = document.querySelectorAll('.game-container');
+    let activeButton = null;
+    let activeGameId = null;
+
+    games.forEach(game => {
+        const button = document.createElement('button');
+        button.textContent = translations[game.langKey][currentLanguage];
+        button.dataset.gameId = game.id;
+        button.dataset.langKey = game.langKey;
+        button.className = 'game-button font-bold py-3 px-2 rounded-lg bg-gray-700 hover:bg-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-400 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md';
+        
+        button.addEventListener('click', () => {
+            const activeGameConfig = games.find(g => g.id === activeGameId);
+            if (activeGameConfig) {
+                if (activeGameConfig.type === 'native') {
+                    const stopFunctionName = `stop${activeGameId.charAt(0).toUpperCase() + activeGameId.slice(1).replace(/-(\w)/g, (g) => g[1].toUpperCase())}`;
+                    if (window[stopFunctionName]) window[stopFunctionName]();
+                } else if (activeGameConfig.type === 'iframe') {
+                    const iframe = document.getElementById(`${activeGameId.replace('-game', '-iframe')}`);
+                    if (iframe) iframe.src = 'about:blank';
+                }
+            }
+            
+            const gameConfig = games.find(g => g.id === game.id);
+            activeGameId = game.id;
+            
+            gameContainers.forEach(container => container.classList.add('hidden'));
+            const gameContainer = document.getElementById(game.id);
+            gameContainer.classList.remove('hidden');
+
+            if (gameConfig.type === 'native') {
+                const initFunctionName = `init${game.id.charAt(0).toUpperCase() + game.id.slice(1).replace(/-(\w)/g, (g) => g[1].toUpperCase())}`;
+                if (window[initFunctionName]) window[initFunctionName]();
+            } else if (gameConfig.type === 'iframe') {
+                const iframe = document.getElementById(`${game.id.replace('-game', '-iframe')}`);
+                if (iframe) iframe.src = gameConfig.src;
+            }
+
+            if (activeButton) {
+                activeButton.classList.remove('bg-purple-700', 'ring-4', 'ring-purple-400');
+                activeButton.classList.add('bg-gray-700');
+            }
+            button.classList.add('bg-purple-700', 'ring-4', 'ring-purple-400');
+            button.classList.remove('bg-gray-700');
+            activeButton = button;
+        });
+        buttonGrid.appendChild(button);
+    });
+
+    const keys = {};
+    window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+    
+    // Ініціалізація мови при завантаженні
+    document.addEventListener('DOMContentLoaded', () => {
+        setLanguage('uk');
+    });
+
+    // =================================================================
+    // ГРА: ЗМІЙКА
+    // =================================================================
+    const snakeCanvas = document.getElementById('snake-canvas'), snakeCtx = snakeCanvas.getContext('2d'), snakeScoreEl = document.getElementById('snake-score'), snakeGameOverEl = document.getElementById('snake-game-over');
+    let gridSize, snake, food, score, direction, snakeGameInterval, isSnakeGameOver;
+    function resizeSnakeCanvas() { const size = Math.min(snakeCanvas.parentElement.clientWidth, snakeCanvas.parentElement.clientHeight) * 0.9; snakeCanvas.width = size; snakeCanvas.height = size; gridSize = snakeCanvas.width / 20; }
+    function initSnakeGame() { resizeSnakeCanvas(); snake = [{ x: 10, y: 10 }]; food = {}; score = 0; direction = 'right'; isSnakeGameOver = false; snakeScoreEl.textContent = score; snakeGameOverEl.classList.add('hidden'); placeFood(); snakeGameInterval = setInterval(snakeGameLoop, 100); document.addEventListener('keydown', changeDirection); }
+    function stopSnakeGame() { clearInterval(snakeGameInterval); document.removeEventListener('keydown', changeDirection); }
+    function snakeGameLoop() { if (isSnakeGameOver) return; updateSnake(); drawSnake(); }
+    function placeFood() { food = { x: Math.floor(Math.random() * 20), y: Math.floor(Math.random() * 20) }; if (snake.some(s => s.x === food.x && s.y === food.y)) placeFood(); }
+    function updateSnake() { const head = { ...snake[0] }; if (direction === 'right') head.x++; if (direction === 'left') head.x--; if (direction === 'up') head.y--; if (direction === 'down') head.y++; if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20 || snake.some(s => s.x === head.x && s.y === head.y)) { snakeGameOver(); return; } snake.unshift(head); if (head.x === food.x && head.y === food.y) { score++; snakeScoreEl.textContent = score; placeFood(); } else { snake.pop(); } }
+    function drawSnake() { snakeCtx.fillStyle = '#111827'; snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height); snakeCtx.fillStyle = '#68d391'; snake.forEach(s => snakeCtx.fillRect(s.x * gridSize, s.y * gridSize, gridSize - 2, gridSize - 2)); snakeCtx.fillStyle = '#f87171'; snakeCtx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2); }
+    function changeDirection(e) { const key = e.key.toLowerCase(); if ((key === 'arrowup' || key === 'w') && direction !== 'down') direction = 'up'; if ((key === 'arrowdown' || key === 's') && direction !== 'up') direction = 'down'; if ((key === 'arrowleft' || key === 'a') && direction !== 'right') direction = 'left'; if ((key === 'arrowright' || key === 'd') && direction !== 'left') direction = 'right'; if (isSnakeGameOver && key === 'enter') initSnakeGame(); }
+    function snakeGameOver() { isSnakeGameOver = true; clearInterval(snakeGameInterval); snakeGameOverEl.classList.remove('hidden'); }
+
+    // =================================================================
+    // ГРА: ХРЕСТИКИ-НУЛИКИ
+    // =================================================================
+    const tttBoardEl = document.getElementById('tic-tac-toe-board'), tttStatusEl = document.getElementById('tic-tac-toe-status'), tttRestartBtn = document.getElementById('tic-tac-toe-restart');
+    let tttState, tttCurrentPlayer, tttIsGameActive;
+    function initTicTacToeGame() { tttState = Array(9).fill(''); tttCurrentPlayer = 'X'; tttIsGameActive = true; updateTttStatus(); tttRestartBtn.classList.add('hidden'); tttBoardEl.innerHTML = ''; for (let i = 0; i < 9; i++) { const cell = document.createElement('div'); cell.className = 'tic-tac-toe-cell'; cell.dataset.index = i; cell.addEventListener('click', handleCellClick); tttBoardEl.appendChild(cell); } tttRestartBtn.addEventListener('click', initTicTacToeGame); }
+    function stopTicTacToeGame() { tttRestartBtn.removeEventListener('click', initTicTacToeGame); }
+    function handleCellClick(e) { const i = parseInt(e.target.dataset.index); if (tttState[i] !== '' || !tttIsGameActive) return; tttState[i] = tttCurrentPlayer; e.target.textContent = tttCurrentPlayer; e.target.classList.add(tttCurrentPlayer.toLowerCase()); handleResultValidation(); }
+    function handleResultValidation() { const wc = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]; let won = false, wl = []; for (let i = 0; i < wc.length; i++) { const [a, b, c] = wc[i]; if (tttState[a] && tttState[a] === tttState[b] && tttState[a] === tttState[c]) { won = true; wl = wc[i]; break; } } if (won) { tttIsGameActive = false; wl.forEach(i => tttBoardEl.children[i].classList.add('win')); tttRestartBtn.classList.remove('hidden'); updateTttStatus(true, false); return; } if (!tttState.includes('')) { tttIsGameActive = false; tttRestartBtn.classList.remove('hidden'); updateTttStatus(false, true); return; } tttCurrentPlayer = tttCurrentPlayer === 'X' ? 'O' : 'X'; updateTttStatus(); }
+    function updateTttStatus(isWin = false, isDraw = false) { let key; if (isWin) key = 'ttt_win'; else if (isDraw) key = 'draw'; else key = 'ttt_turn'; tttStatusEl.textContent = translations[key][currentLanguage].replace('{player}', tttCurrentPlayer); }
+
+    // =================================================================
+    // ГРА: ПОНГ
+    // =================================================================
+    const pongCanvas = document.getElementById('pong-canvas'), pongCtx = pongCanvas.getContext('2d'), pongPlayerScoreEl = document.getElementById('pong-player-score'), pongComputerScoreEl = document.getElementById('pong-computer-score'), pongGameOverEl = document.getElementById('pong-game-over'), pongWinnerEl = document.getElementById('pong-winner');
+    let ball, player, computer, playerScore, computerScore, pongGameInterval, isPongGameOver;
+    const PADDLE_HEIGHT = 100, PADDLE_WIDTH = 10, WINNING_SCORE = 5;
+    function resizePongCanvas() { const rect = pongCanvas.parentElement.getBoundingClientRect(); pongCanvas.width = rect.width; pongCanvas.height = rect.height; }
+    function initPongGame() { resizePongCanvas(); playerScore = 0; computerScore = 0; isPongGameOver = false; pongPlayerScoreEl.textContent = playerScore; pongComputerScoreEl.textContent = computerScore; pongGameOverEl.classList.add('hidden'); player = { x: 10, y: pongCanvas.height / 2 - PADDLE_HEIGHT / 2, width: PADDLE_WIDTH, height: PADDLE_HEIGHT }; computer = { x: pongCanvas.width - PADDLE_WIDTH - 10, y: pongCanvas.height / 2 - PADDLE_HEIGHT / 2, width: PADDLE_WIDTH, height: PADDLE_HEIGHT }; resetBall(); pongGameInterval = setInterval(pongGameLoop, 1000 / 60); window.addEventListener('mousemove', movePlayerPaddle); pongCanvas.addEventListener('click', () => { if(isPongGameOver) initPongGame(); }); }
+    function stopPongGame() { clearInterval(pongGameInterval); window.removeEventListener('mousemove', movePlayerPaddle); }
+    function pongGameLoop() { if(isPongGameOver) return; updatePong(); drawPong(); }
+    function resetBall() { ball = { x: pongCanvas.width / 2, y: pongCanvas.height / 2, radius: 7, dx: Math.random() > 0.5 ? 5 : -5, dy: Math.random() * 6 - 3 }; }
+    function updatePong() { ball.x += ball.dx; ball.y += ball.dy; computer.y += (ball.y - (computer.y + PADDLE_HEIGHT / 2)) * 0.08; if (ball.y + ball.radius > pongCanvas.height || ball.y - ball.radius < 0) ball.dy *= -1; if (collision(ball, player) || collision(ball, computer)) ball.dx *= -1; if (ball.x + ball.radius < 0) { computerScore++; pongComputerScoreEl.textContent = computerScore; resetBall(); } else if (ball.x - ball.radius > pongCanvas.width) { playerScore++; pongPlayerScoreEl.textContent = playerScore; resetBall(); } if (playerScore >= WINNING_SCORE) { pongWinnerEl.textContent = translations.pong_win_player[currentLanguage]; pongGameOver(); } else if (computerScore >= WINNING_SCORE) { pongWinnerEl.textContent = translations.pong_win_cpu[currentLanguage]; pongGameOver(); } }
+    function collision(b, p) { return b.x + b.radius > p.x && b.x - b.radius < p.x + p.width && b.y + b.radius > p.y && b.y - b.radius < p.y + p.height; }
+    function drawPong() { pongCtx.fillStyle = '#111827'; pongCtx.fillRect(0, 0, pongCanvas.width, pongCanvas.height); pongCtx.strokeStyle = '#4a5568'; pongCtx.lineWidth = 4; pongCtx.setLineDash([10, 10]); pongCtx.beginPath(); pongCtx.moveTo(pongCanvas.width / 2, 0); pongCtx.lineTo(pongCanvas.width / 2, pongCanvas.height); pongCtx.stroke(); pongCtx.setLineDash([]); pongCtx.fillStyle = '#e2e8f0'; pongCtx.fillRect(player.x, player.y, player.width, player.height); pongCtx.fillRect(computer.x, computer.y, computer.width, computer.height); pongCtx.beginPath(); pongCtx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2); pongCtx.fill(); }
+    function movePlayerPaddle(e) { const rect = pongCanvas.getBoundingClientRect(); player.y = e.clientY - rect.top - PADDLE_HEIGHT / 2; if (player.y < 0) player.y = 0; if (player.y > pongCanvas.height - PADDLE_HEIGHT) player.y = pongCanvas.height - PADDLE_HEIGHT; }
+    function pongGameOver() { isPongGameOver = true; clearInterval(pongGameInterval); pongGameOverEl.classList.remove('hidden'); }
+
+    // =================================================================
+    // ГРА: АРКАНОЇД
+    // =================================================================
+    const arkanoidCanvas = document.getElementById('arkanoid-canvas'), arkanoidCtx = arkanoidCanvas.getContext('2d'), arkanoidScoreEl = document.getElementById('arkanoid-score'), arkanoidLivesEl = document.getElementById('arkanoid-lives'), arkanoidMessageEl = document.getElementById('arkanoid-message'), arkanoidMessageTextEl = document.getElementById('arkanoid-message-text');
+    let arkanoidPaddle, arkanoidBall, bricks, arkanoidScore, arkanoidLives, arkanoidGameInterval, isArkanoidGameOver;
+    function resizeArkanoidCanvas() { const rect = arkanoidCanvas.parentElement.getBoundingClientRect(); arkanoidCanvas.width = rect.width; arkanoidCanvas.height = rect.height; }
+    function initArkanoidGame() { resizeArkanoidCanvas(); arkanoidScore = 0; arkanoidLives = 3; arkanoidScoreEl.textContent = arkanoidScore; arkanoidLivesEl.textContent = arkanoidLives; arkanoidPaddle = { x: arkanoidCanvas.width / 2 - 50, y: arkanoidCanvas.height - 20, width: 100, height: 10 }; arkanoidBall = { x: arkanoidCanvas.width / 2, y: arkanoidCanvas.height - 30, radius: 10, dx: 4, dy: -4 }; createBricks(); arkanoidMessageEl.classList.add('hidden'); isArkanoidGameOver = false; arkanoidGameInterval = setInterval(arkanoidGameLoop, 1000 / 60); window.addEventListener('mousemove', moveArkanoidPaddle); }
+    function stopArkanoidGame() { clearInterval(arkanoidGameInterval); window.removeEventListener('mousemove', moveArkanoidPaddle); }
+    function createBricks() { bricks = []; const BRICK_COLUMN_COUNT = 8, BRICK_ROW_COUNT = 5; for (let c = 0; c < BRICK_COLUMN_COUNT; c++) { bricks[c] = []; for (let r = 0; r < BRICK_ROW_COUNT; r++) { bricks[c][r] = { x: 0, y: 0, status: 1 }; } } }
+    function arkanoidGameLoop() { if (isArkanoidGameOver) return; updateArkanoid(); drawArkanoid(); }
+    function updateArkanoid() { arkanoidBall.x += arkanoidBall.dx; arkanoidBall.y += arkanoidBall.dy; if (arkanoidBall.x + arkanoidBall.radius > arkanoidCanvas.width || arkanoidBall.x - arkanoidBall.radius < 0) arkanoidBall.dx *= -1; if (arkanoidBall.y - arkanoidBall.radius < 0) arkanoidBall.dy *= -1; if (arkanoidBall.y + arkanoidBall.radius > arkanoidCanvas.height) { arkanoidLives--; arkanoidLivesEl.textContent = arkanoidLives; if (arkanoidLives <= 0) { arkanoidGameOver(translations.game_over[currentLanguage]); } else { arkanoidBall.x = arkanoidCanvas.width / 2; arkanoidBall.y = arkanoidCanvas.height - 30; arkanoidBall.dx = 4; arkanoidBall.dy = -4; arkanoidPaddle.x = arkanoidCanvas.width / 2 - 50; } } if (arkanoidBall.y + arkanoidBall.radius > arkanoidPaddle.y && arkanoidBall.x > arkanoidPaddle.x && arkanoidBall.x < arkanoidPaddle.x + arkanoidPaddle.width) arkanoidBall.dy *= -1; brickCollision(); }
+    function brickCollision() { let totalBricks = 0; for (let c = 0; c < bricks.length; c++) { for (let r = 0; r < bricks[c].length; r++) { const b = bricks[c][r]; if (b.status === 1) { totalBricks++; if (arkanoidBall.x > b.x && arkanoidBall.x < b.x + (arkanoidCanvas.width / 10) && arkanoidBall.y > b.y && arkanoidBall.y < b.y + 20) { arkanoidBall.dy *= -1; b.status = 0; arkanoidScore++; arkanoidScoreEl.textContent = arkanoidScore; } } } } if (totalBricks === 1) arkanoidGameOver(translations.win[currentLanguage]); }
+    function drawArkanoid() { arkanoidCtx.clearRect(0, 0, arkanoidCanvas.width, arkanoidCanvas.height); drawBricks(); arkanoidCtx.fillStyle = '#e2e8f0'; arkanoidCtx.fillRect(arkanoidPaddle.x, arkanoidPaddle.y, arkanoidPaddle.width, arkanoidPaddle.height); arkanoidCtx.beginPath(); arkanoidCtx.arc(arkanoidBall.x, arkanoidBall.y, arkanoidBall.radius, 0, Math.PI * 2); arkanoidCtx.fill(); }
+    function drawBricks() { const BRICK_WIDTH = arkanoidCanvas.width / 10, BRICK_HEIGHT = 20, BRICK_PADDING = 5, BRICK_OFFSET_TOP = 30, BRICK_OFFSET_LEFT = (arkanoidCanvas.width - (bricks.length * (BRICK_WIDTH + BRICK_PADDING))) / 2; for (let c = 0; c < bricks.length; c++) { for (let r = 0; r < bricks[c].length; r++) { if (bricks[c][r].status === 1) { const brickX = (c * (BRICK_WIDTH + BRICK_PADDING)) + BRICK_OFFSET_LEFT; const brickY = (r * (BRICK_HEIGHT + BRICK_PADDING)) + BRICK_OFFSET_TOP; bricks[c][r].x = brickX; bricks[c][r].y = brickY; arkanoidCtx.fillStyle = `hsl(${r * 60}, 70%, 50%)`; arkanoidCtx.fillRect(brickX, brickY, BRICK_WIDTH, BRICK_HEIGHT); } } } }
+    function moveArkanoidPaddle(e) { const rect = arkanoidCanvas.getBoundingClientRect(); let relativeX = e.clientX - rect.left; if (relativeX > 0 && relativeX < arkanoidCanvas.width) arkanoidPaddle.x = relativeX - arkanoidPaddle.width / 2; }
+    function arkanoidGameOver(message) { isArkanoidGameOver = true; clearInterval(arkanoidGameInterval); arkanoidMessageTextEl.textContent = message; arkanoidMessageEl.classList.remove('hidden'); arkanoidMessageEl.addEventListener('click', initArkanoidGame, { once: true }); }
+    
+    // =================================================================
+    // ГРА: КОСМО-ЗАГАРБНИКИ
+    // =================================================================
+    const invadersCanvas = document.getElementById('space-invaders-canvas'), invadersCtx = invadersCanvas.getContext('2d'), invadersScoreEl = document.getElementById('invaders-score'), invadersLivesEl = document.getElementById('invaders-lives'), invadersMessageEl = document.getElementById('invaders-message'), invadersMessageTextEl = document.getElementById('invaders-message-text');
+    let invaderPlayer, invaders, invaderBullets, invaderDirection, invaderSpeed, invadersScore, invadersLives, invadersGameInterval, isInvadersGameOver;
+    function resizeInvadersCanvas() { const rect = invadersCanvas.parentElement.getBoundingClientRect(); invadersCanvas.width = rect.width; invadersCanvas.height = rect.height; }
+    function initSpaceInvadersGame() { resizeInvadersCanvas(); invadersScore = 0; invadersLives = 3; invadersScoreEl.textContent = invadersScore; invadersLivesEl.textContent = invadersLives; invaderPlayer = { x: invadersCanvas.width / 2 - 25, y: invadersCanvas.height - 60, width: 50, height: 20, speed: 5 }; invaderBullets = []; invaders = []; invaderDirection = 1; invaderSpeed = 1; isInvadersGameOver = false; for (let r = 0; r < 4; r++) { for (let c = 0; c < 10; c++) { invaders.push({ x: c * 50 + 50, y: r * 40 + 50, width: 40, height: 20, status: 1 }); } } invadersMessageEl.classList.add('hidden'); invadersGameInterval = setInterval(invadersGameLoop, 1000 / 60); document.addEventListener('keydown', invadersKeyDown); }
+    function stopSpaceInvadersGame() { clearInterval(invadersGameInterval); document.removeEventListener('keydown', invadersKeyDown); }
+    function invadersGameLoop() { if (isInvadersGameOver) return; updateInvaders(); drawInvaders(); }
+    function updateInvaders() { if (keys['arrowleft'] || keys['a']) invaderPlayer.x -= invaderPlayer.speed; if (keys['arrowright'] || keys['d']) invaderPlayer.x += invaderPlayer.speed; if (invaderPlayer.x < 0) invaderPlayer.x = 0; if (invaderPlayer.x + invaderPlayer.width > invadersCanvas.width) invaderPlayer.x = invadersCanvas.width - invaderPlayer.width; invaderBullets.forEach((bullet, index) => { bullet.y -= bullet.speed; if (bullet.y < 0) invaderBullets.splice(index, 1); }); let edge = false; invaders.forEach(invader => { if (invader.status === 1) { invader.x += invaderSpeed * invaderDirection; if (invader.x + invader.width > invadersCanvas.width || invader.x < 0) edge = true; } }); if (edge) { invaderDirection *= -1; invaders.forEach(invader => invader.y += 20); } invaderBullets.forEach((bullet, bIndex) => { invaders.forEach((invader, iIndex) => { if (invader.status === 1 && bullet.x > invader.x && bullet.x < invader.x + invader.width && bullet.y > invader.y && bullet.y < invader.y + invader.height) { invader.status = 0; invaderBullets.splice(bIndex, 1); invadersScore += 10; invadersScoreEl.textContent = invadersScore; } }); }); if (invaders.every(i => i.status === 0)) invadersGameOver(translations.win[currentLanguage]); }
+    function drawInvaders() { invadersCtx.clearRect(0, 0, invadersCanvas.width, invadersCanvas.height); invadersCtx.fillStyle = '#68d391'; invadersCtx.fillRect(invaderPlayer.x, invaderPlayer.y, invaderPlayer.width, invaderPlayer.height); invaders.forEach(invader => { if (invader.status === 1) { invadersCtx.fillStyle = '#f6ad55'; invadersCtx.fillRect(invader.x, invader.y, invader.width, invader.height); } }); invaderBullets.forEach(bullet => { invadersCtx.fillStyle = '#e2e8f0'; invadersCtx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height); }); }
+    function invadersKeyDown(e) { if (e.key === ' ' && !isInvadersGameOver) { invaderBullets.push({ x: invaderPlayer.x + invaderPlayer.width / 2 - 2.5, y: invaderPlayer.y, width: 5, height: 10, speed: 7 }); } if (isInvadersGameOver && e.key === 'Enter') initSpaceInvadersGame(); }
+    function invadersGameOver(message) { isInvadersGameOver = true; clearInterval(invadersGameInterval); invadersMessageTextEl.textContent = message; invadersMessageEl.classList.remove('hidden'); }
+    
+    // =================================================================
+    // ГРА: АСТЕРОЇДИ
+    // =================================================================
+    const asteroidsCanvas = document.getElementById('asteroids-canvas'), asteroidsCtx = asteroidsCanvas.getContext('2d'), asteroidsScoreEl = document.getElementById('asteroids-score'), asteroidsLivesEl = document.getElementById('asteroids-lives'), asteroidsMessageEl = document.getElementById('asteroids-message'), asteroidsMessageTextEl = document.getElementById('asteroids-message-text');
+    let asteroidPlayer, asteroids, asteroidBullets, asteroidsScore, asteroidsLives, asteroidsGameInterval, isAsteroidsGameOver;
+    function resizeAsteroidsCanvas() { const rect = asteroidsCanvas.parentElement.getBoundingClientRect(); asteroidsCanvas.width = rect.width; asteroidsCanvas.height = rect.height; }
+    function initAsteroidsGame() { resizeAsteroidsCanvas(); asteroidsScore = 0; asteroidsLives = 3; asteroidsScoreEl.textContent = asteroidsScore; asteroidsLivesEl.textContent = asteroidsLives; asteroidPlayer = { x: asteroidsCanvas.width / 2, y: asteroidsCanvas.height / 2, r: 15, a: 90 / 180 * Math.PI, rot: 0, thrusting: false, thrust: { x: 0, y: 0 } }; asteroidBullets = []; asteroids = []; for (let i = 0; i < 5; i++) { asteroids.push(newAsteroid()); } isAsteroidsGameOver = false; asteroidsMessageEl.classList.add('hidden'); asteroidsGameInterval = setInterval(asteroidsGameLoop, 1000 / 60); document.addEventListener('keydown', asteroidsKeyDown); }
+    function stopAsteroidsGame() { clearInterval(asteroidsGameInterval); document.removeEventListener('keydown', asteroidsKeyDown); }
+    function newAsteroid(x = Math.random() * asteroidsCanvas.width, y = Math.random() * asteroidsCanvas.height, r = 50) { return { x, y, r, a: Math.random() * Math.PI * 2, vert: Math.floor(Math.random() * 5 + 5), xv: Math.random() * 2 - 1, yv: Math.random() * 2 - 1 }; }
+    function asteroidsGameLoop() { if (isAsteroidsGameOver) return; updateAsteroids(); drawAsteroids(); }
+    function updateAsteroids() { if (keys['arrowleft'] || keys['a']) asteroidPlayer.rot = -0.1; else if (keys['arrowright'] || keys['d']) asteroidPlayer.rot = 0.1; else asteroidPlayer.rot = 0; if (keys['arrowup'] || keys['w']) { asteroidPlayer.thrusting = true; asteroidPlayer.thrust.x += 0.1 * Math.cos(asteroidPlayer.a); asteroidPlayer.thrust.y -= 0.1 * Math.sin(asteroidPlayer.a); } else { asteroidPlayer.thrusting = false; asteroidPlayer.thrust.x *= 0.99; asteroidPlayer.thrust.y *= 0.99; } asteroidPlayer.a += asteroidPlayer.rot; asteroidPlayer.x += asteroidPlayer.thrust.x; asteroidPlayer.y += asteroidPlayer.thrust.y; if (asteroidPlayer.x < 0) asteroidPlayer.x = asteroidsCanvas.width; if (asteroidPlayer.x > asteroidsCanvas.width) asteroidPlayer.x = 0; if (asteroidPlayer.y < 0) asteroidPlayer.y = asteroidsCanvas.height; if (asteroidPlayer.y > asteroidsCanvas.height) asteroidPlayer.y = 0; asteroidBullets.forEach((b, i) => { b.x += b.xv; b.y += b.yv; if (b.x < 0 || b.x > asteroidsCanvas.width || b.y < 0 || b.y > asteroidsCanvas.height) asteroidBullets.splice(i, 1); }); asteroids.forEach(a => { a.x += a.xv; a.y += a.yv; if (a.x < -a.r) a.x = asteroidsCanvas.width + a.r; if (a.x > asteroidsCanvas.width + a.r) a.x = -a.r; if (a.y < -a.r) a.y = asteroidsCanvas.height + a.r; if (a.y > asteroidsCanvas.height + a.r) a.y = -a.r; }); }
+    function drawAsteroids() { asteroidsCtx.clearRect(0, 0, asteroidsCanvas.width, asteroidsCanvas.height); if (asteroidPlayer.thrusting) { asteroidsCtx.fillStyle = "red"; asteroidsCtx.strokeStyle = "yellow"; asteroidsCtx.lineWidth = 5; asteroidsCtx.beginPath(); asteroidsCtx.moveTo(asteroidPlayer.x - asteroidPlayer.r * (2 / 3 * Math.cos(asteroidPlayer.a) + 0.5 * Math.sin(asteroidPlayer.a)), asteroidPlayer.y + asteroidPlayer.r * (2 / 3 * Math.sin(asteroidPlayer.a) - 0.5 * Math.cos(asteroidPlayer.a))); asteroidsCtx.lineTo(asteroidPlayer.x - asteroidPlayer.r * 5 / 3 * Math.cos(asteroidPlayer.a), asteroidPlayer.y + asteroidPlayer.r * 5 / 3 * Math.sin(asteroidPlayer.a)); asteroidsCtx.lineTo(asteroidPlayer.x - asteroidPlayer.r * (2 / 3 * Math.cos(asteroidPlayer.a) - 0.5 * Math.sin(asteroidPlayer.a)), asteroidPlayer.y + asteroidPlayer.r * (2 / 3 * Math.sin(asteroidPlayer.a) + 0.5 * Math.cos(asteroidPlayer.a))); asteroidsCtx.closePath(); asteroidsCtx.fill(); asteroidsCtx.stroke(); } asteroidsCtx.strokeStyle = '#e2e8f0'; asteroidsCtx.lineWidth = 2; asteroidsCtx.beginPath(); asteroidsCtx.moveTo(asteroidPlayer.x + asteroidPlayer.r * Math.cos(asteroidPlayer.a), asteroidPlayer.y - asteroidPlayer.r * Math.sin(asteroidPlayer.a)); asteroidsCtx.lineTo(asteroidPlayer.x - asteroidPlayer.r * (Math.cos(asteroidPlayer.a) + Math.sin(asteroidPlayer.a)), asteroidPlayer.y + asteroidPlayer.r * (Math.sin(asteroidPlayer.a) - Math.cos(asteroidPlayer.a))); asteroidsCtx.lineTo(asteroidPlayer.x - asteroidPlayer.r * (Math.cos(asteroidPlayer.a) - Math.sin(asteroidPlayer.a)), asteroidPlayer.y + asteroidPlayer.r * (Math.sin(asteroidPlayer.a) + Math.cos(asteroidPlayer.a))); asteroidsCtx.closePath(); asteroidsCtx.stroke(); asteroidBullets.forEach(b => { asteroidsCtx.fillStyle = 'white'; asteroidsCtx.beginPath(); asteroidsCtx.arc(b.x, b.y, 2, 0, Math.PI * 2); asteroidsCtx.fill(); }); asteroids.forEach(a => { asteroidsCtx.strokeStyle = 'grey'; asteroidsCtx.lineWidth = 2; asteroidsCtx.beginPath(); asteroidsCtx.moveTo(a.x + a.r * Math.cos(a.a), a.y + a.r * Math.sin(a.a)); for (let j = 1; j < a.vert; j++) { asteroidsCtx.lineTo(a.x + a.r * Math.cos(a.a + j * Math.PI * 2 / a.vert), a.y + a.r * Math.sin(a.a + j * Math.PI * 2 / a.vert)); } asteroidsCtx.closePath(); asteroidsCtx.stroke(); }); }
+    function asteroidsKeyDown(e) { if (e.key === ' ') asteroidBullets.push({ x: asteroidPlayer.x + 4 / 3 * asteroidPlayer.r * Math.cos(asteroidPlayer.a), y: asteroidPlayer.y - 4 / 3 * asteroidPlayer.r * Math.sin(asteroidPlayer.a), xv: 5 * Math.cos(asteroidPlayer.a), yv: -5 * Math.sin(asteroidPlayer.a) }); if (isAsteroidsGameOver && e.key === 'Enter') initAsteroidsGame(); }
+    
+    // =================================================================
+    // ГРА: ПТАШКА-ЛЕТУН
+    // =================================================================
+    const flappyCanvas = document.getElementById('flappy-bird-canvas'), flappyCtx = flappyCanvas.getContext('2d'), flappyScoreEl = document.getElementById('flappy-score'), flappyMessageEl = document.getElementById('flappy-message');
+    let flappyBird, flappyPipes, flappyScore, flappyGameInterval, isFlappyGameOver;
+    const FLAP = -5, GRAVITY = 0.25, PIPE_SPEED = 2, PIPE_GAP = 150;
+    function resizeFlappyCanvas() { const rect = flappyCanvas.parentElement.getBoundingClientRect(); flappyCanvas.width = rect.width; flappyCanvas.height = rect.height; }
+    function initFlappyBirdGame() { resizeFlappyCanvas(); flappyScore = 0; flappyScoreEl.textContent = flappyScore; flappyBird = { x: 50, y: flappyCanvas.height / 2, width: 40, height: 30, velocity: 0 }; flappyPipes = []; flappyPipes.push({ x: flappyCanvas.width, y: Math.random() * (flappyCanvas.height - PIPE_GAP - 100) + 50, passed: false }); isFlappyGameOver = false; flappyMessageEl.classList.add('hidden'); flappyGameInterval = setInterval(flappyGameLoop, 1000 / 60); flappyCanvas.addEventListener('click', flappyJump); }
+    function stopFlappyBirdGame() { clearInterval(flappyGameInterval); flappyCanvas.removeEventListener('click', flappyJump); }
+    function flappyGameLoop() { if (isFlappyGameOver) return; updateFlappyBird(); drawFlappyBird(); }
+    function updateFlappyBird() { flappyBird.velocity += GRAVITY; flappyBird.y += flappyBird.velocity; if (flappyBird.y + flappyBird.height > flappyCanvas.height || flappyBird.y < 0) flappyGameOver(); flappyPipes.forEach(pipe => { pipe.x -= PIPE_SPEED; if (flappyBird.x < pipe.x + 60 && flappyBird.x + flappyBird.width > pipe.x && (flappyBird.y < pipe.y || flappyBird.y + flappyBird.height > pipe.y + PIPE_GAP)) flappyGameOver(); if (!pipe.passed && pipe.x < flappyBird.x) { flappyScore++; flappyScoreEl.textContent = flappyScore; pipe.passed = true; } }); if (flappyPipes[flappyPipes.length - 1].x < flappyCanvas.width - 200) flappyPipes.push({ x: flappyCanvas.width, y: Math.random() * (flappyCanvas.height - PIPE_GAP - 100) + 50, passed: false }); if (flappyPipes[0].x < -60) flappyPipes.shift(); }
+    function drawFlappyBird() { flappyCtx.clearRect(0, 0, flappyCanvas.width, flappyCanvas.height); flappyCtx.fillStyle = '#f6ad55'; flappyCtx.fillRect(flappyBird.x, flappyBird.y, flappyBird.width, flappyBird.height); flappyCtx.fillStyle = '#68d391'; flappyPipes.forEach(pipe => { flappyCtx.fillRect(pipe.x, 0, 60, pipe.y); flappyCtx.fillRect(pipe.x, pipe.y + PIPE_GAP, 60, flappyCanvas.height - pipe.y - PIPE_GAP); }); }
+    function flappyJump() { if (!isFlappyGameOver) flappyBird.velocity = FLAP; }
+    function flappyGameOver() { isFlappyGameOver = true; clearInterval(flappyGameInterval); flappyMessageEl.classList.remove('hidden'); flappyCanvas.addEventListener('click', initFlappyBirdGame, { once: true }); }
+    
+    // =================================================================
+    // ГРА: САПЕР
+    // =================================================================
+    const mineBoardEl = document.getElementById('minesweeper-board'), mineMinesLeftEl = document.getElementById('minesweeper-mines-left'), mineMessageEl = document.getElementById('minesweeper-message'), mineMessageTextEl = document.getElementById('minesweeper-message-text');
+    let mineGrid, mineRows, mineCols, mineCount, minesLeft, isMineGameOver;
+    function initMinesweeperGame() { mineRows = 10; mineCols = 10; mineCount = 15; minesLeft = mineCount; isMineGameOver = false; mineMinesLeftEl.textContent = minesLeft; mineMessageEl.classList.add('hidden'); createMineGrid(); renderMineBoard(); }
+    function stopMinesweeperGame() { mineBoardEl.innerHTML = ''; }
+    function createMineGrid() { mineGrid = Array(mineRows).fill(null).map(() => Array(mineCols).fill(null).map(() => ({ mine: false, revealed: false, flagged: false, neighbors: 0 }))); let minesPlaced = 0; while (minesPlaced < mineCount) { const r = Math.floor(Math.random() * mineRows); const c = Math.floor(Math.random() * mineCols); if (!mineGrid[r][c].mine) { mineGrid[r][c].mine = true; minesPlaced++; } } for (let r = 0; r < mineRows; r++) { for (let c = 0; c < mineCols; c++) { if (mineGrid[r][c].mine) continue; let count = 0; for (let i = -1; i <= 1; i++) { for (let j = -1; j <= 1; j++) { if (i === 0 && j === 0) continue; const nr = r + i, nc = c + j; if (nr >= 0 && nr < mineRows && nc >= 0 && nc < mineCols && mineGrid[nr][nc].mine) count++; } } mineGrid[r][c].neighbors = count; } } }
+    function renderMineBoard() { mineBoardEl.innerHTML = ''; mineBoardEl.style.gridTemplateColumns = `repeat(${mineCols}, 1fr)`; mineBoardEl.style.gridTemplateRows = `repeat(${mineRows}, 1fr)`; mineGrid.forEach((row, r) => { row.forEach((cell, c) => { const cellEl = document.createElement('div'); cellEl.className = 'minesweeper-cell'; cellEl.dataset.row = r; cellEl.dataset.col = c; if (cell.revealed) { cellEl.classList.add('revealed'); if (cell.mine) cellEl.classList.add('mine'); else if (cell.neighbors > 0) { cellEl.textContent = cell.neighbors; cellEl.classList.add(`color-${cell.neighbors}`); } } if (cell.flagged) cellEl.classList.add('flagged'); cellEl.addEventListener('click', handleMineClick); cellEl.addEventListener('contextmenu', handleMineFlag); mineBoardEl.appendChild(cellEl); }); }); }
+    function handleMineClick(e) { if (isMineGameOver) return; const r = parseInt(e.target.dataset.row), c = parseInt(e.target.dataset.col); const cell = mineGrid[r][c]; if (cell.flagged || cell.revealed) return; if (cell.mine) { mineGameOver(false); } else { revealCell(r, c); checkMineWin(); } renderMineBoard(); }
+    function handleMineFlag(e) { e.preventDefault(); if (isMineGameOver) return; const r = parseInt(e.target.dataset.row), c = parseInt(e.target.dataset.col); const cell = mineGrid[r][c]; if (cell.revealed) return; cell.flagged = !cell.flagged; minesLeft += cell.flagged ? -1 : 1; mineMinesLeftEl.textContent = minesLeft; renderMineBoard(); }
+    function revealCell(r, c) { const cell = mineGrid[r][c]; if (r < 0 || r >= mineRows || c < 0 || c >= mineCols || cell.revealed || cell.flagged) return; cell.revealed = true; if (cell.neighbors === 0 && !cell.mine) { for (let i = -1; i <= 1; i++) { for (let j = -1; j <= 1; j++) { revealCell(r + i, c + j); } } } }
+    function checkMineWin() { const revealedCount = mineGrid.flat().filter(c => c.revealed).length; if (revealedCount === mineRows * mineCols - mineCount) mineGameOver(true); }
+    function mineGameOver(win) { isMineGameOver = true; mineGrid.forEach(row => row.forEach(cell => {if(cell.mine) cell.revealed = true;})); mineMessageTextEl.textContent = win ? translations.win[currentLanguage] : translations.lose[currentLanguage]; mineMessageEl.classList.remove('hidden'); mineBoardEl.addEventListener('click', initMinesweeperGame, { once: true }); }
+    </script>
+</body>
+</html>
