@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="google-site-verification" content="google-site-verification: google77ed374287d929fc.html" />
-    <title>My Game Arcade</title>
+    <title>Світ Власних Міні-Ігор</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -117,7 +116,11 @@
             height: 100%;
             object-fit: cover;
         }
-
+        #game-display-container:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            aspect-ratio: auto;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white p-4 md:p-8">
@@ -141,7 +144,15 @@
             <p class="text-gray-400 mt-2" data-lang-key="subtitle">Власноруч створені ігри. Насолоджуйтесь!</p>
         </header>
 
-        <main class="mb-8 bg-black rounded-xl shadow-2xl border-4 border-purple-500">
+        <main class="mb-8 bg-black rounded-xl shadow-2xl border-4 border-purple-500 relative">
+            <button id="fullscreen-btn" title="Fullscreen" class="absolute top-2 right-2 z-50 p-2 bg-gray-700/50 rounded-full hover:bg-purple-600 transition">
+                <svg id="fullscreen-enter-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                </svg>
+                <svg id="fullscreen-exit-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 4H4v6m0-6l6 6m10 4v6h-6m6-6l-6 6"></path>
+                </svg>
+            </button>
             <div id="game-display-container">
                 <div id="welcome-screen" class="game-container">
                     <h2 class="font-game text-2xl md:text-4xl text-center text-purple-400" data-lang-key="welcome_title">Вітаємо!</h2>
@@ -169,6 +180,9 @@
                 <div id="2048-game" class="game-container hidden">
                     <iframe id="2048-iframe" class="w-full h-full border-0" src=""></iframe>
                 </div>
+                <div id="minecraft-game" class="game-container hidden">
+                    <iframe id="minecraft-iframe" class="w-full h-full border-0" src=""></iframe>
+                </div>
             </div>
         </main>
 
@@ -180,7 +194,33 @@
         
         <footer class="text-center mt-12 text-gray-500 text-sm">
             <p data-lang-key="created_by">Створено за допомогою Gemini</p>
+            <button id="support-us-btn" class="mt-4 font-game text-yellow-400 hover:text-yellow-200" data-lang-key="support_us">Підтримати проект</button>
         </footer>
+    </div>
+
+    <div id="support-us-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 p-6 md:p-8 rounded-lg shadow-2xl max-w-md w-full text-center relative border-2 border-purple-500">
+             <button id="close-modal-btn" class="absolute top-2 right-2 text-gray-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+             </button>
+            <h2 class="font-game text-xl md:text-2xl text-yellow-400 mb-6" data-lang-key="support_title">Підтримайте нас</h2>
+            <div class="text-left space-y-4">
+                <div>
+                    <p class="font-bold text-lg">Bitcoin (BTC):</p>
+                    <p class="text-green-400 break-all bg-gray-900 p-2 rounded">bc1qctxclq8eqpp6prgx07eymw34ma4v5t69dkpdw5</p>
+                </div>
+                <div>
+                    <p class="font-bold text-lg">Ethereum (ETH):</p>
+                    <p class="text-blue-400 break-all bg-gray-900 p-2 rounded">0x666195090354F0D6DDc3c8F7169CEC2427039332</p>
+                </div>
+            </div>
+            <div class="mt-6 p-4 bg-red-900/50 border border-red-500 rounded-lg">
+                <p class="font-game text-yellow-300" data-lang-key="warning_title">Увага!</p>
+                <p class="text-sm text-gray-300 mt-2" data-lang-key="warning_text">Надсилайте лише Bitcoin для Bitcoin, та Ethereum для Ethereum на цю адресу. Надсилання інших монет може призвести до незворотної втрати.</p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -225,6 +265,11 @@
         game_tetris: { uk: 'Тетріс', en: 'Tetris', ru: 'Тетрис' },
         game_pacman: { uk: 'Пекмен', en: 'Pac-Man', ru: 'Пакман' },
         game_2048: { uk: '2048', en: '2048', ru: '2048' },
+        game_minecraft: { uk: 'Minecraft', en: 'Minecraft', ru: 'Minecraft' },
+        support_us: { uk: 'Підтримати проект', en: 'Support Us', ru: 'Поддержать проект' },
+        support_title: { uk: 'Підтримайте нас', en: 'Support Us', ru: 'Поддержите нас' },
+        warning_title: { uk: 'Увага!', en: 'Warning!', ru: 'Внимание!' },
+        warning_text: { uk: 'Надсилайте лише Bitcoin для Bitcoin, та Ethereum для Ethereum на цю адресу. Надсилання інших монет може призвести до незворотної втрати.', en: 'Send only Bitcoin to the Bitcoin address, and Ethereum to the Ethereum address. Sending other coins may result in irreversible loss.', ru: 'Отправляйте только Bitcoin на адрес Bitcoin, и Ethereum на адрес Ethereum. Отправка других монет может привести к необратимой потере.'}
     };
     let currentLanguage = 'uk';
 
@@ -266,6 +311,7 @@
         { name: 'Тетріс', id: 'tetris-game', type: 'iframe', src: 'https://djblue.github.io/tetris/', langKey: 'game_tetris' },
         { name: 'Пекмен', id: 'pacman-game', type: 'iframe', src: 'https://masonicgit.github.io/pacman/', langKey: 'game_pacman' },
         { name: '2048', id: '2048-game', type: 'iframe', src: 'https://ng2048.github.io/', langKey: 'game_2048' },
+        { name: 'Minecraft', id: 'minecraft-game', type: 'iframe', src: 'https://classic.minecraft.net/', langKey: 'game_minecraft' },
     ];
 
     const buttonGrid = document.getElementById('button-grid');
@@ -333,6 +379,60 @@
     document.addEventListener('DOMContentLoaded', () => {
         setLanguage('uk');
     });
+
+    // =================================================================
+    // ЛОГІКА ІНТЕРФЕЙСУ (МОДАЛ, ПОВНИЙ ЕКРАН)
+    // =================================================================
+    const supportUsBtn = document.getElementById('support-us-btn');
+    const supportUsModal = document.getElementById('support-us-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const gameDisplayContainer = document.getElementById('game-display-container');
+    const enterIcon = document.getElementById('fullscreen-enter-icon');
+    const exitIcon = document.getElementById('fullscreen-exit-icon');
+
+    if (supportUsBtn) {
+        supportUsBtn.addEventListener('click', () => {
+            supportUsModal.classList.remove('hidden');
+        });
+    }
+
+    if(closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            supportUsModal.classList.add('hidden');
+        });
+    }
+    
+    if (supportUsModal) {
+        supportUsModal.addEventListener('click', (e) => {
+            if (e.target.id === 'support-us-modal') {
+                supportUsModal.classList.add('hidden');
+            }
+        });
+    }
+
+    if(fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                gameDisplayContainer.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+            enterIcon.classList.add('hidden');
+            exitIcon.classList.remove('hidden');
+        } else {
+            enterIcon.classList.remove('hidden');
+            exitIcon.classList.add('hidden');
+        }
+    });
+
 
     // =================================================================
     // ГРА: ЗМІЙКА
