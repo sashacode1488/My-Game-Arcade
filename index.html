@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Світ Власних Міні-Ігор</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    
+
     <style>
         /* Загальні стилі та ігровий шрифт */
         body {
@@ -183,11 +184,23 @@
                 <div id="minecraft-game" class="game-container hidden">
                     <iframe id="minecraft-iframe" class="w-full h-full border-0" src=""></iframe>
                 </div>
+                <div id="fireboy-watergirl-game" class="game-container hidden">
+                    <embed id="ruffle-embed" class="w-full h-full" src=""></embed>
+                </div>
             </div>
         </main>
 
         <section>
-            <h3 class="font-game text-2xl text-center mb-6 text-green-400" data-lang-key="game_choice">Вибір гри</h3>
+            <h3 class="font-game text-2xl text-center mb-4 text-green-400" data-lang-key="game_choice">Вибір гри</h3>
+            
+            <div id="category-filters" class="flex flex-wrap justify-center gap-2 mb-6">
+                <button class="category-btn font-bold py-2 px-4 rounded-lg bg-purple-700 ring-4 ring-purple-400 transition-all" data-category="all">Всі ігри</button>
+                <button class="category-btn font-bold py-2 px-4 rounded-lg bg-gray-700 hover:bg-purple-600 transition-all" data-category="classic">Класика</button>
+                <button class="category-btn font-bold py-2 px-4 rounded-lg bg-gray-700 hover:bg-purple-600 transition-all" data-category="arcade">Аркади</button>
+                <button class="category-btn font-bold py-2 px-4 rounded-lg bg-gray-700 hover:bg-purple-600 transition-all" data-category="puzzle">Головоломки</button>
+                <button class="category-btn font-bold py-2 px-4 rounded-lg bg-gray-700 hover:bg-purple-600 transition-all" data-category="adventure">Пригоди</button>
+            </div>
+
             <div id="button-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 </div>
         </section>
@@ -266,6 +279,7 @@
         game_pacman: { uk: 'Пекмен', en: 'Pac-Man', ru: 'Пакман' },
         game_2048: { uk: '2048', en: '2048', ru: '2048' },
         game_minecraft: { uk: 'Minecraft', en: 'Minecraft', ru: 'Minecraft' },
+        game_fireboy_watergirl: { uk: 'Вогонь та Вода', en: 'Fireboy & Watergirl', ru: 'Огонь и Вода' },
         support_us: { uk: 'Підтримати проект', en: 'Support Us', ru: 'Поддержать проект' },
         support_title: { uk: 'Підтримайте нас', en: 'Support Us', ru: 'Поддержите нас' },
         warning_title: { uk: 'Увага!', en: 'Warning!', ru: 'Внимание!' },
@@ -299,19 +313,20 @@
     // ОСНОВНА ЛОГІКА САЙТУ
     // =================================================================
     const games = [
-        { name: 'Змійка', id: 'snake-game', type: 'native', langKey: 'game_snake' },
-        { name: 'Хрестики-нулики', id: 'tic-tac-toe-game', type: 'native', langKey: 'game_ttt' },
-        { name: 'Понг', id: 'pong-game', type: 'native', langKey: 'game_pong' },
-        { name: 'Арканоїд', id: 'arkanoid-game', type: 'native', langKey: 'game_arkanoid' },
-        { name: 'Космо-Загарбники', id: 'space-invaders-game', type: 'native', langKey: 'game_invaders' },
-        { name: 'Астероїди', id: 'asteroids-game', type: 'native', langKey: 'game_asteroids' },
-        { name: 'Пташка-Летун', id: 'flappy-bird-game', type: 'native', langKey: 'game_flappy' },
-        { name: 'Сапер', id: 'minesweeper-game', type: 'native', langKey: 'game_minesweeper' },
-        { name: 'Супер Маріо', id: 'mario-game', type: 'iframe', src: 'https://jcw87.github.io/c2-smb1/', langKey: 'game_mario' },
-        { name: 'Тетріс', id: 'tetris-game', type: 'iframe', src: 'https://djblue.github.io/tetris/', langKey: 'game_tetris' },
-        { name: 'Пекмен', id: 'pacman-game', type: 'iframe', src: 'https://masonicgit.github.io/pacman/', langKey: 'game_pacman' },
-        { name: '2048', id: '2048-game', type: 'iframe', src: 'https://ng2048.github.io/', langKey: 'game_2048' },
-        { name: 'Minecraft', id: 'minecraft-game', type: 'iframe', src: 'https://classic.minecraft.net/', langKey: 'game_minecraft' },
+        { name: 'Змійка', id: 'snake-game', type: 'native', langKey: 'game_snake', category: 'classic' },
+        { name: 'Хрестики-нулики', id: 'tic-tac-toe-game', type: 'native', langKey: 'game_ttt', category: 'puzzle' },
+        { name: 'Понг', id: 'pong-game', type: 'native', langKey: 'game_pong', category: 'classic' },
+        { name: 'Арканоїд', id: 'arkanoid-game', type: 'native', langKey: 'game_arkanoid', category: 'arcade' },
+        { name: 'Космо-Загарбники', id: 'space-invaders-game', type: 'native', langKey: 'game_invaders', category: 'arcade' },
+        { name: 'Астероїди', id: 'asteroids-game', type: 'native', langKey: 'game_asteroids', category: 'arcade' },
+        { name: 'Пташка-Летун', id: 'flappy-bird-game', type: 'native', langKey: 'game_flappy', category: 'arcade' },
+        { name: 'Сапер', id: 'minesweeper-game', type: 'native', langKey: 'game_minesweeper', category: 'puzzle' },
+        { name: 'Тетріс', id: 'tetris-game', type: 'iframe', src: 'https://djblue.github.io/tetris/', langKey: 'game_tetris', category: 'classic' },
+        { name: 'Пекмен', id: 'pacman-game', type: 'iframe', src: 'https://masonicgit.github.io/pacman/', langKey: 'game_pacman', category: 'classic' },
+        { name: '2048', id: '2048-game', type: 'iframe', src: 'https://ng2048.github.io/', langKey: 'game_2048', category: 'puzzle' },
+        { name: 'Вогонь та Вода', id: 'fireboy-watergirl-game', type: 'flash', src: 'https://archive.org/download/fireboy-watergirl-the-forest-temple_202401/Fireboy%20%26%20Watergirl%20-%20The%20Forest%20Temple.swf', langKey: 'game_fireboy_watergirl', category: 'puzzle' },
+        { name: 'Супер Маріо', id: 'mario-game', type: 'iframe', src: 'https://jcw87.github.io/c2-smb1/', langKey: 'game_mario', category: 'adventure' },
+        { name: 'Minecraft', id: 'minecraft-game', type: 'iframe', src: 'https://classic.minecraft.net/', langKey: 'game_minecraft', category: 'adventure' },
     ];
 
     const buttonGrid = document.getElementById('button-grid');
@@ -319,7 +334,6 @@
     let activeButton = null;
     let activeGameConfig = null;
 
-    // Helper to stop any running game
     function stopActiveGame() {
         if (!activeGameConfig) return;
         
@@ -329,6 +343,9 @@
         } else if (activeGameConfig.type === 'iframe') {
             const iframe = document.getElementById(`${activeGameConfig.id.replace('-game', '-iframe')}`);
             if (iframe) iframe.src = 'about:blank';
+        } else if (activeGameConfig.type === 'flash') {
+            const embed = document.getElementById('ruffle-embed');
+            if (embed) embed.src = 'about:blank';
         }
     }
     
@@ -337,30 +354,29 @@
         button.textContent = translations[game.langKey][currentLanguage];
         button.dataset.gameId = game.id;
         button.dataset.langKey = game.langKey;
+        // Зберігаємо категорію в data-атрибуті для легкого доступу
+        button.dataset.category = game.category;
         button.className = 'game-button font-bold py-3 px-2 rounded-lg bg-gray-700 hover:bg-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-400 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md';
         
         button.addEventListener('click', () => {
-            // Stop the previously active game
             stopActiveGame();
-            
-            // Set the new active game
             activeGameConfig = game;
             
-            // Hide all containers and show the correct one
             gameContainers.forEach(container => container.classList.add('hidden'));
             const gameContainer = document.getElementById(game.id);
             if (gameContainer) gameContainer.classList.remove('hidden');
 
-            // Initialize the new game based on its type
             if (game.type === 'native') {
                 const initFunctionName = `init${game.id.charAt(0).toUpperCase() + game.id.slice(1).replace(/-(\w)/g, (g) => g[1].toUpperCase())}`;
                 if (window[initFunctionName]) window[initFunctionName]();
             } else if (game.type === 'iframe') {
                 const iframe = document.getElementById(`${game.id.replace('-game', '-iframe')}`);
                 if (iframe) iframe.src = game.src;
+            } else if (game.type === 'flash') {
+                const embed = document.getElementById('ruffle-embed');
+                if(embed) embed.src = game.src;
             }
 
-            // Update button styles
             if (activeButton) {
                 activeButton.classList.remove('bg-purple-700', 'ring-4', 'ring-purple-400');
                 activeButton.classList.add('bg-gray-700');
@@ -371,6 +387,36 @@
         });
         buttonGrid.appendChild(button);
     });
+
+    // =================================================================
+    // ЛОГІКА ФІЛЬТРАЦІЇ КАТЕГОРІЙ
+    // =================================================================
+    const categoryButtons = document.querySelectorAll('.category-btn');
+    const gameButtons = document.querySelectorAll('.game-button');
+
+    categoryButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const selectedCategory = button.dataset.category;
+
+            // Оновлення стилів активної кнопки категорії
+            categoryButtons.forEach(btn => {
+                btn.classList.remove('bg-purple-700', 'ring-4', 'ring-purple-400');
+                btn.classList.add('bg-gray-700');
+            });
+            button.classList.add('bg-purple-700', 'ring-4', 'ring-purple-400');
+            button.classList.remove('bg-gray-700');
+            
+            // Фільтрація кнопок ігор
+            gameButtons.forEach(gameBtn => {
+                if (selectedCategory === 'all' || gameBtn.dataset.category === selectedCategory) {
+                    gameBtn.style.display = 'block';
+                } else {
+                    gameBtn.style.display = 'none';
+                }
+            });
+        });
+    });
+
 
     const keys = {};
     window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
@@ -533,7 +579,7 @@
     function stopFlappyBirdGame() { clearInterval(flappyGameInterval); flappyCanvas.removeEventListener('click', flappyJump); }
     function flappyGameLoop() { if (isFlappyGameOver) return; updateFlappyBird(); drawFlappyBird(); }
     function updateFlappyBird() { flappyBird.velocity += GRAVITY; flappyBird.y += flappyBird.velocity; if (flappyBird.y + flappyBird.height > flappyCanvas.height || flappyBird.y < 0) flappyGameOver(); flappyPipes.forEach(pipe => { pipe.x -= PIPE_SPEED; if (flappyBird.x < pipe.x + 60 && flappyBird.x + flappyBird.width > pipe.x && (flappyBird.y < pipe.y || flappyBird.y + flappyBird.height > pipe.y + PIPE_GAP)) flappyGameOver(); if (!pipe.passed && pipe.x < flappyBird.x) { flappyScore++; flappyScoreEl.textContent = flappyScore; pipe.passed = true; } }); if (flappyPipes[flappyPipes.length - 1].x < flappyCanvas.width - 200) flappyPipes.push({ x: flappyCanvas.width, y: Math.random() * (flappyCanvas.height - PIPE_GAP - 100) + 50, passed: false }); if (flappyPipes[0].x < -60) flappyPipes.shift(); }
-    function drawFlappyBird() { flappyCtx.clearRect(0, 0, flappyCanvas.width, flappyCanvas.height); flappyCtx.fillStyle = '#f6ad55'; flappyCtx.fillRect(flappyBird.x, flappyBird.y, flappyBird.width, flappyBird.height); flappyCtx.fillStyle = '#68d391'; flappyPipes.forEach(pipe => { flappyCtx.fillRect(pipe.x, 0, 60, pipe.y); flappyCtx.fillRect(pipe.x, pipe.y + PIPE_GAP, 60, flappyCanvas.height - pipe.y - PIPE_GAP); }); }
+    function drawFlappyBird() { flappyCtx.clearRect(0, 0, flappyCanvas.width, flappyCanvas.height); flappyCtx.fillStyle = '#f6ad55'; flappyCtx.fillRect(flappyBird.x, flappyBird.y, flappyBird.width, flappyBird.height); flappyCtx.fillStyle = '#68d391'; flappyPipes.forEach(pipe => { flappyCtx.fillRect(pipe.x, 0, 60, pipe.y); flppyCtx.fillRect(pipe.x, pipe.y + PIPE_GAP, 60, flappyCanvas.height - pipe.y - PIPE_GAP); }); }
     function flappyJump() { if (!isFlappyGameOver) flappyBird.velocity = FLAP; }
     function flappyGameOver() { isFlappyGameOver = true; clearInterval(flappyGameInterval); flappyMessageEl.classList.remove('hidden'); flappyCanvas.addEventListener('click', initFlappyBirdGame, { once: true }); }
     
